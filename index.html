@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; form-action 'none'; base-uri 'none'">
+<title>Voice Assistant</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f5f8fc;--panel:#ffffff;--line:#d9e3ee;--acc:#2563eb;--acc2:#e8f0ff;--onacc:#ffffff;--text:#142033;--dim:#5d6f86;--ok:#12805c;--bad:#c0392b;--glow:#2563eb40;--shadow:0 6px 24px rgba(20,32,51,.08)}
+html{scroll-padding-top:env(safe-area-inset-top,0px);color-scheme:light}
+*,*:before,*:after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:16px}
+.top{width:100%;max-width:640px;display:flex;justify-content:space-between;align-items:center}
+.top .sp{width:44px}
+h1{font-weight:600;font-size:1.15rem;color:var(--text);margin:0;text-align:center}
+.gear{width:44px;height:44px;padding:0;border-radius:50%;background:var(--panel);border:1px solid var(--line);color:var(--text);font-size:1.2rem;box-shadow:var(--shadow);display:grid;place-items:center}
+.gear:hover{border-color:var(--acc)}
+.sub{color:var(--dim);font-size:.88rem;margin:10px 0 6px;text-align:center}
+.orb-wrap{position:relative;width:150px;height:150px;margin:18px 0 16px;cursor:pointer;border-radius:50%}
+.orb{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffffff 0%,#cfe0ff 45%,#8fb2ff 100%);border:2px solid var(--acc);box-shadow:0 10px 30px var(--glow);display:grid;place-items:center;font-size:2.4rem;transition:.3s}
+.ring{position:absolute;inset:-12px;border-radius:50%;border:2px dashed var(--acc);opacity:.35;animation:spin 16s linear infinite}
+.orb-wrap.on .orb{box-shadow:0 0 0 8px var(--acc2),0 10px 40px var(--acc);animation:pulse 1.3s ease-in-out infinite}
+.orb-wrap.talk .orb{border-color:var(--ok);box-shadow:0 0 0 8px #dff5ec,0 10px 40px var(--ok);animation:pulse .7s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{50%{transform:scale(1.06)}}
+.status{color:var(--acc);font-size:.92rem;min-height:1.3em;margin-bottom:12px;text-align:center;font-weight:500}
+.log{width:100%;max-width:640px;min-height:150px;max-height:34vh;overflow-y:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;font-size:.95rem;box-shadow:var(--shadow)}
+.msg{margin:7px 0;line-height:1.45}
+.msg b{font-weight:600}
+.me b{color:var(--dim)}
+.jv b{color:var(--acc)}
+a{color:var(--acc)}
+form{display:flex;gap:8px;width:100%}
+.main-form{max-width:640px;margin-top:14px}
+input,select{flex:1;min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;color:var(--text);padding:12px;font-size:1rem}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+button{background:var(--acc);color:var(--onacc);border:0;border-radius:12px;padding:0 18px;min-height:44px;font-weight:600;font-size:1rem;cursor:pointer}
+.sec{width:100%;max-width:640px;margin-top:16px}
+.sec h2{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin:0 0 8px 4px;font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:99px;padding:0 14px;min-height:38px;font-size:.85rem;font-weight:500}
+.chip:hover{border-color:var(--acc);color:var(--acc)}
+.chip.app{background:var(--acc2);border-color:#bcd2ff;color:#1c4fc4}
+.chip.acc{background:#fff;border-color:var(--acc);color:var(--acc)}
+.chip.sug{color:var(--dim);font-weight:400}
+.panel{width:100%;max-width:640px;margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
+.panel[hidden]{display:none}
+.phead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.phead b{font-size:1rem}
+.big{font-size:2.2rem;font-weight:600;text-align:center;margin:8px 0;font-variant-numeric:tabular-nums}
+.ghost{background:transparent;color:var(--dim);border:1px solid var(--line);padding:0 12px;min-height:36px;font-weight:500;font-size:.85rem}
+.row{display:flex;gap:8px;margin:10px 0;align-items:center}
+.row label{font-size:.85rem;color:var(--dim);min-width:46px}
+.list{list-style:none;margin:8px 0 0;padding:0}
+.list li{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:.9rem;word-break:break-word}
+.tag{display:inline-block;font-size:.7rem;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--dim);margin-left:6px}
+.hint{font-size:.82rem;color:var(--dim);margin:6px 0;line-height:1.5}
+.priv{padding-left:18px;margin:6px 0;font-size:.85rem;line-height:1.6;color:var(--dim)}
+h3{font-size:.95rem;margin:16px 0 4px;color:var(--text)}
+hr{border:0;border-top:1px solid var(--line);margin:16px 0}
+dialog{border:0;border-radius:20px;padding:0;width:min(92vw,520px);max-height:88vh;background:var(--panel);color:var(--text);box-shadow:0 20px 60px rgba(20,32,51,.3)}
+dialog::backdrop{background:rgba(20,32,51,.45)}
+.dbody{padding:18px;overflow-y:auto;max-height:88vh}
+.dhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.dhead h2{margin:0;font-size:1.2rem}
+.acc-row{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:.95rem}
+.acc-row input{flex:none;width:20px;height:20px;accent-color:var(--acc)}
+.perm p{margin:8px 0;line-height:1.5}
+.perm .btns{display:flex;gap:10px;margin-top:16px}
+.perm .btns button{flex:1}
+.deny{background:var(--panel);color:var(--text);border:1px solid var(--line)}
+.danger{color:var(--bad);border-color:#efc3bd}
+@media (prefers-reduced-motion:reduce){.ring,.orb{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="top"><span class="sp"></span><h1 id="aname">Voice Assistant</h1><button class="gear" id="gear" aria-label="Open settings" title="Settings">⚙️</button></div>
+<p class="sub" id="asub"></p>
+<div class="orb-wrap" id="orb" role="button" aria-label="Toggle microphone" tabindex="0"><div class="ring"></div><div class="orb">🎙️</div></div>
+<div class="status" id="status">Offline. Tap the orb to start.</div>
+<div class="log" id="log" aria-live="polite"></div>
+<form id="f" class="main-form"><input id="t" placeholder="Type e.g. what's the weather" autocomplete="off" aria-label="Type a command"><button type="submit">Send</button></form>
+
+<div class="sec" id="appsec"><h2>My apps</h2><div class="chips" id="apps"></div></div>
+<div class="sec" id="accsec"><h2>Accessories</h2><div class="chips" id="acc"></div></div>
+<div class="panel" id="panel" hidden></div>
+<div class="sec"><h2>Try saying</h2><div class="chips" id="chips"></div></div>
+
+<dialog id="settings" aria-labelledby="stitle">
+<div class="dbody">
+  <div class="dhead"><h2 id="stitle">Settings</h2><button type="button" class="ghost" id="sclose">Close</button></div>
+
+  <h3>Assistant name</h3>
+  <form id="nf" class="row"><input id="nn" maxlength="20" placeholder="Name your assistant" autocomplete="off" aria-label="Assistant name"><button type="submit">Save</button></form>
+
+  <h3>Voice</h3>
+  <div class="row"><select id="vsel" aria-label="Voice"></select><button type="button" id="vtest">Test</button></div>
+  <p class="hint">A female voice is picked automatically. Available voices depend on your device.</p>
+  <hr>
+
+  <h3>Apps and websites</h3>
+  <p class="hint">Websites open right away. Apps installed on your phone or computer (anything that is not a website) always ask your permission first.</p>
+  <div class="row"><select id="preset" aria-label="Quick pick"></select></div>
+  <form id="af"><input id="an" placeholder="Name (e.g. Spotify)" maxlength="30" required aria-label="App name"><input id="au" placeholder="App link or website" required aria-label="App link or website"><button type="submit">Add</button></form>
+  <ul class="list" id="links"></ul>
+  <hr>
+
+  <h3>Accessories</h3>
+  <p class="hint">Choose which tools show on the main screen. They work fully on this device.</p>
+  <div id="accset"></div>
+  <hr>
+
+  <h3>🔒 Privacy and security</h3>
+  <ul class="priv">
+    <li>No data is shared with any app. Before this assistant opens any installed app, it asks you to allow or deny, every time.</li>
+    <li>Only an app's name and link are saved, in this browser on this device. Nothing is sent to any server by this page.</li>
+    <li>This page cannot read your messages, contacts, photos or accounts, and never asks for passwords.</li>
+    <li>Your chat is not saved. It disappears when you close the page.</li>
+    <li>Voice input uses your browser's speech service (Chrome and Edge send audio to their provider). Typing avoids that. Searches, weather and news open Google in a new tab, which receives that search.</li>
+    <li>On a shared device, erase your data when you are done.</li>
+  </ul>
+  <button type="button" class="ghost danger" id="erase">Erase all my data</button>
+</div>
+</dialog>
+
+<dialog id="perm" aria-labelledby="ptitle">
+<div class="dbody perm">
+  <h2 id="ptitle" style="margin:0;font-size:1.2rem">Allow app to open?</h2>
+  <p id="pmsg"></p>
+  <p class="hint">No data from this assistant is shared with the app. It only gets opened.</p>
+  <div class="btns"><button type="button" class="deny" id="pno">Don't allow</button><button type="button" id="pyes">Allow</button></div>
+</div>
+</dialog>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+  function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+  function lsDel(k){try{localStorage.removeItem(k);}catch(e){}}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  var log=$('log'),statusEl=$('status'),orb=$('orb');
+  var DEFAULT_NAME='Voice Assistant';
+
+  /* settings dialog */
+  $('gear').addEventListener('click',function(){$('settings').showModal();});
+  $('sclose').addEventListener('click',function(){$('settings').close();});
+
+  /* name */
+  var NAME=(lsGet('va_name')||DEFAULT_NAME).replace(/[<>&"]/g,'').trim()||DEFAULT_NAME;
+  function applyName(){$('aname').textContent=NAME;document.title=NAME;$('asub').textContent='Tap the orb and say "'+NAME+', ..." or type a command.';$('nn').value=NAME;}
+  function stripWake(s){var n=NAME.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g,'\\$&');return s.replace(new RegExp('\\b'+n+'\\b','g'),'');}
+  $('nf').addEventListener('submit',function(e){e.preventDefault();NAME=$('nn').value.replace(/[<>&"]/g,'').trim()||DEFAULT_NAME;lsSet('va_name',NAME);applyName();speak('Nice to meet you. Call me '+NAME+' from now on.');});
+
+  /* voice output (female) */
+  var voices=[],voice=null,speaking=false;
+  var FEMALE=/(female|zira|samantha|heera|neerja|veena|aria|jenny|susan|hazel|karen|moira|tessa|fiona|victoria|google us english|swara|kalpana|lekha|microsoft .*online)/i;
+  var MALE=/(\bmale\b|david|mark|james|ravi|hemant|prabhat|guy|daniel|alex|fred|george|rishi|ryan|brian)/i;
+  function score(v){var s=0;if(/^en[-_]IN$/i.test(v.lang))s+=5;if(/^en/i.test(v.lang))s+=3;if(FEMALE.test(v.name))s+=4;if(MALE.test(v.name)&&!/female/i.test(v.name))s-=10;return s;}
+  function loadVoices(){
+    if(!('speechSynthesis' in window))return;
+    voices=speechSynthesis.getVoices();if(!voices.length)return;
+    var sorted=voices.slice().sort(function(a,b){return score(b)-score(a);}),saved=lsGet('va_voice');
+    voice=voices.filter(function(v){return v.name===saved;})[0]||sorted[0];
+    $('vsel').innerHTML='';
+    sorted.forEach(function(v){var o=document.createElement('option');o.value=v.name;o.textContent=v.name+' ('+v.lang+')';if(v===voice)o.selected=true;$('vsel').appendChild(o);});
+  }
+  if('speechSynthesis' in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices;}
+  $('vsel').addEventListener('change',function(){voice=voices.filter(function(v){return v.name===$('vsel').value;})[0]||voice;if(voice)lsSet('va_voice',voice.name);});
+  $('vtest').addEventListener('click',function(){speak('Hi, I am '+NAME+'. How does this voice sound?');});
+
+  function add(who,html){var d=document.createElement('div');d.className='msg '+(who==='You'?'me':'jv');d.innerHTML='<b>'+esc(who)+':</b> '+html;log.appendChild(d);log.scrollTop=log.scrollHeight;}
+  var spokeOnce=false;
+  function speak(text,html){add(NAME,html||esc(text));say(text);}
+  function say(text){
+    if(!('speechSynthesis' in window))return;
+    try{speechSynthesis.cancel();speechSynthesis.resume();}catch(e){}
+    var u=new SpeechSynthesisUtterance(text);
+    if(voice){u.voice=voice;u.lang=voice.lang;}
+    u.pitch=1.15;u.rate=1;
+    u.onstart=function(){spokeOnce=true;speaking=true;orb.classList.add('talk');};
+    u.onend=u.onerror=function(){speaking=false;orb.classList.remove('talk');};
+    speechSynthesis.speak(u);
+  }
+
+  /* opening links: websites open directly, apps always ask first */
+  function isWeb(u){return /^https?:/i.test(u);}
+  function launch(url){
+    try{
+      if(isWeb(url)){window.open(url,'_blank','noopener,noreferrer');}
+      else{var a=document.createElement('a');a.href=url;a.rel='noopener noreferrer';a.style.display='none';document.body.appendChild(a);a.click();a.remove();}
+    }catch(e){}
+  }
+  var permResolve=null,permDlg=$('perm');
+  function finishPerm(v){if(permResolve){var r=permResolve;permResolve=null;if(permDlg.open)permDlg.close();r(v);}}
+  $('pyes').addEventListener('click',function(){finishPerm(true);});
+  $('pno').addEventListener('click',function(){finishPerm(false);});
+  permDlg.addEventListener('close',function(){finishPerm(false);});
+  function askPermission(name){
+    finishPerm(false);
+    $('ptitle').textContent='Allow '+name+' to open?';
+    $('pmsg').textContent=NAME+' wants to open the '+name+' app on this device. Do you allow it?';
+    return new Promise(function(res){permResolve=res;permDlg.showModal();});
+  }
+  function openLink(url,label,name){
+    if(isWeb(url)){launch(url);speak(label,esc(label)+' <a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">open link</a>');return;}
+    name=name||'this app';
+    speak('Asking your permission to open '+name+'.');
+    askPermission(name).then(function(ok){
+      if(ok){launch(url);add(NAME,'Opened '+esc(name)+'. Nothing was shared with it.');}
+      else add(NAME,'Okay, I did not open '+esc(name)+'.');
+    });
+  }
+
+  /* apps */
+  var DEFAULTS=[
+    {n:'Maps',u:'geo:0,0'},
+    {n:'WhatsApp',u:'whatsapp://'},{n:'Instagram',u:'instagram://'},{n:'Spotify',u:'spotify:'},
+    {n:'YouTube',u:'https://www.youtube.com'},{n:'GitHub',u:'https://github.com'}
+  ];
+  var PRESETS=[['Maps app','geo:0,0'],['WhatsApp (installed app)','whatsapp://'],['Instagram (installed app)','instagram://'],['Spotify','spotify:'],['Telegram','tg://'],['Discord','discord://'],['Zoom','zoommtg://'],['Microsoft Teams','msteams:'],['Slack','slack://'],['VS Code','vscode://'],['Steam','steam://'],['Notion','notion://'],['Calculator (Windows)','calculator:']];
+  var apps=null;
+  try{apps=JSON.parse(lsGet('va_apps')||'null');}catch(e){}
+  if(!Array.isArray(apps))apps=DEFAULTS.slice();
+  function saveApps(){lsSet('va_apps',JSON.stringify(apps));}
+  function normUrl(u){u=u.trim();if(!u||/^(javascript|data|vbscript|file|blob):/i.test(u))return null;if(/^[a-z][a-z0-9+.-]*:/i.test(u))return u;return 'https://'+u;}
+  function renderApps(){
+    var box=$('apps');box.innerHTML='';
+    apps.forEach(function(a){var b=document.createElement('button');b.type='button';b.className='chip app';b.textContent=a.n;b.onclick=function(){openLink(a.u,'Opening '+a.n+'.',a.n);};box.appendChild(b);});
+    $('appsec').hidden=!apps.length;
+    var ul=$('links');ul.innerHTML='';
+    if(!apps.length)ul.innerHTML='<li><span class="hint">No apps yet.</span></li>';
+    apps.forEach(function(a,i){
+      var li=document.createElement('li');
+      li.innerHTML='<span><b>'+esc(a.n)+'</b><span class="tag">'+(isWeb(a.u)?'Website':'App · asks first')+'</span><br><span class="hint">'+esc(a.u)+'</span></span>';
+      var r=document.createElement('button');r.type='button';r.className='ghost';r.textContent='Remove';
+      r.onclick=function(){apps.splice(i,1);saveApps();renderApps();};
+      li.appendChild(r);ul.appendChild(li);
+    });
+  }
+  var ps=$('preset');ps.innerHTML='<option value="">Quick pick an app...</option>';
+  PRESETS.forEach(function(p,i){var o=document.createElement('option');o.value=i;o.textContent=p[0];ps.appendChild(o);});
+  ps.addEventListener('change',function(){var p=PRESETS[ps.value];if(p){$('an').value=p[0].replace(/ \(.*\)/,'').replace(/ app$/,'');$('au').value=p[1];}});
+  $('af').addEventListener('submit',function(e){
+    e.preventDefault();
+    var n=$('an').value.trim(),u=normUrl($('au').value);
+    if(!n||!u){speak("That link doesn't look right. Please check it.");return;}
+    apps=apps.filter(function(a){return a.n.toLowerCase()!==n.toLowerCase();});
+    apps.push({n:n,u:u});saveApps();renderApps();
+    $('an').value='';$('au').value='';ps.value='';speak('Added '+n+'. Say open '+n+' any time.');
+  });
+
+  /* safe calculator (no eval) */
+  function evalExpr(s){
+    var t=s.replace(/\s+/g,'');if(!/^[\d+\-*/%().]+$/.test(t))return null;
+    var tk=t.match(/\d*\.\d+|\d+|[()+\-*/%]/g);if(!tk||tk.join('')!==t)return null;
+    var p=0;
+    function peek(){return tk[p];}
+    function expr(){var v=term();while(peek()==='+'||peek()==='-'){var o=tk[p++],r=term();v=o==='+'?v+r:v-r;}return v;}
+    function term(){var v=unary();while(peek()==='*'||peek()==='/'||peek()==='%'){var o=tk[p++],r=unary();v=o==='*'?v*r:o==='/'?v/r:v%r;}return v;}
+    function unary(){if(peek()==='-'){p++;return -unary();}if(peek()==='+'){p++;return unary();}return prim();}
+    function prim(){var x=tk[p++];if(x==='('){var v=expr();if(tk[p++]!==')')throw 0;return v;}if(x===undefined||!/^[\d.]/.test(x))throw 0;return parseFloat(x);}
+    try{var r=expr();if(p!==tk.length||!isFinite(r))return null;return Math.round(r*1e6)/1e6;}catch(e){return null;}
+  }
+  function calc(c){
+    var e=c.replace(/\bplus\b/g,'+').replace(/\bminus\b/g,'-').replace(/\b(times|multiplied by|x)\b/g,'*').replace(/\b(divided by|over)\b/g,'/').replace(/what is|calculate|how much is|equals|\?/g,'').trim();
+    if(!/\d/.test(e)||!/[+\-*/%]/.test(e))return null;
+    return evalExpr(e);
+  }
+
+  /* accessories */
+  var ACC=[{id:'timer',n:'⏱ Timer'},{id:'notes',n:'📝 Notes'},{id:'calc',n:'🧮 Calculator'}];
+  var accOn=null;try{accOn=JSON.parse(lsGet('va_acc')||'null');}catch(e){}
+  if(!Array.isArray(accOn))accOn=ACC.map(function(a){return a.id;});
+  var notes=[];try{notes=JSON.parse(lsGet('va_notes')||'[]');if(!Array.isArray(notes))notes=[];}catch(e){notes=[];}
+  function saveNotes(){lsSet('va_notes',JSON.stringify(notes));}
+  var timerEnd=0,timerInt=null,timerEl=null;
+  function fmt(ms){var s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+':':'')+String(m).padStart(h?2:1,'0')+':'+String(x).padStart(2,'0');}
+  function tick(){
+    var left=timerEnd-Date.now();
+    if(timerEl)timerEl.textContent=fmt(left);
+    if(left<=0){clearInterval(timerInt);timerInt=null;timerEnd=0;speak('Your timer is finished.');}
+  }
+  function startTimer(sec){
+    if(!(sec>0)||sec>86400){speak('Please give a timer between 1 second and 24 hours.');return;}
+    clearInterval(timerInt);timerEnd=Date.now()+sec*1000;timerInt=setInterval(tick,250);tick();
+  }
+  function stopTimer(){clearInterval(timerInt);timerInt=null;timerEnd=0;if(timerEl)timerEl.textContent='0:00';}
+  var panel=$('panel'),panelId='';
+  function mk(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=txt;return e;}
+  function head(title){
+    var h=mk('div','phead');h.appendChild(mk('b','',title));
+    var c=mk('button','ghost','Close');c.type='button';c.onclick=function(){hidePanel();};h.appendChild(c);return h;
+  }
+  function hidePanel(){panel.hidden=true;panel.innerHTML='';panelId='';timerEl=null;}
+  function showPanel(id){
+    if(panelId===id&&!panel.hidden){hidePanel();return;}
+    panel.innerHTML='';panelId=id;panel.hidden=false;timerEl=null;
+    if(id==='timer'){
+      panel.appendChild(head('Timer'));
+      timerEl=mk('div','big',timerEnd?fmt(timerEnd-Date.now()):'0:00');panel.appendChild(timerEl);
+      var r=mk('div','row'),inp=mk('input');inp.type='number';inp.min='0.1';inp.step='any';inp.placeholder='Minutes';inp.setAttribute('aria-label','Minutes');
+      var go=mk('button','','Start');go.type='button';go.onclick=function(){startTimer(parseFloat(inp.value)*60);};
+      var st=mk('button','ghost','Stop');st.type='button';st.onclick=stopTimer;
+      r.appendChild(inp);r.appendChild(go);r.appendChild(st);panel.appendChild(r);
+      panel.appendChild(mk('p','hint','Or say: "set a timer for 5 minutes".'));
+    }else if(id==='notes'){
+      panel.appendChild(head('Notes'));
+      var f=mk('form','row'),ni=mk('input');ni.placeholder='Write a note';ni.maxLength=200;ni.setAttribute('aria-label','Note');
+      var sb=mk('button','','Add');sb.type='submit';f.appendChild(ni);f.appendChild(sb);
+      f.onsubmit=function(e){e.preventDefault();if(ni.value.trim()){notes.push(ni.value.trim());saveNotes();showPanel2('notes');}};
+      panel.appendChild(f);
+      var ul=mk('ul','list');
+      if(!notes.length)ul.appendChild(mk('li','hint','No notes yet. Say: "note buy milk".'));
+      notes.forEach(function(n,i){var li=mk('li');li.appendChild(mk('span','',n));var d=mk('button','ghost','Delete');d.type='button';d.onclick=function(){notes.splice(i,1);saveNotes();showPanel2('notes');};li.appendChild(d);ul.appendChild(li);});
+      panel.appendChild(ul);
+      panel.appendChild(mk('p','hint','Notes stay on this device only.'));
+    }else if(id==='calc'){
+      panel.appendChild(head('Calculator'));
+      var cf=mk('form','row'),ci=mk('input');ci.placeholder='e.g. (12 + 8) * 3';ci.setAttribute('aria-label','Expression');ci.inputMode='text';
+      var cb=mk('button','','=');cb.type='submit';cf.appendChild(ci);cf.appendChild(cb);
+      var out=mk('div','big','');
+      cf.onsubmit=function(e){e.preventDefault();var r=evalExpr(ci.value);out.textContent=r===null?'Check the expression':String(r);};
+      panel.appendChild(cf);panel.appendChild(out);
+    }
+  }
+  function showPanel2(id){panelId='';showPanel(id);}
+  function renderAcc(){
+    var box=$('acc');box.innerHTML='';
+    ACC.filter(function(a){return accOn.indexOf(a.id)>-1;}).forEach(function(a){var b=mk('button','chip acc',a.n);b.type='button';b.onclick=function(){showPanel(a.id);};box.appendChild(b);});
+    $('accsec').hidden=!box.children.length;
+    if(panelId&&accOn.indexOf(panelId)<0)hidePanel();
+    var s=$('accset');s.innerHTML='';
+    ACC.forEach(function(a){
+      var l=mk('label','acc-row'),c=mk('input');c.type='checkbox';c.checked=accOn.indexOf(a.id)>-1;
+      c.onchange=function(){accOn=accOn.filter(function(x){return x!==a.id;});if(c.checked)accOn.push(a.id);lsSet('va_acc',JSON.stringify(accOn));renderAcc();};
+      l.appendChild(c);l.appendChild(mk('span','',a.n));s.appendChild(l);
+    });
+  }
+
+  /* erase */
+  var eraseT=0;
+  $('erase').addEventListener('click',function(){
+    var b=$('erase');
+    if(!eraseT){b.textContent='Tap again to confirm';eraseT=setTimeout(function(){eraseT=0;b.textContent='Erase all my data';},4000);return;}
+    clearTimeout(eraseT);eraseT=0;
+    ['va_apps','va_name','va_voice','va_acc','va_notes'].forEach(lsDel);
+    apps=DEFAULTS.slice();notes=[];accOn=ACC.map(function(a){return a.id;});NAME=DEFAULT_NAME;stopTimer();hidePanel();log.innerHTML='';
+    renderApps();renderAcc();applyName();loadVoices();b.textContent='Erase all my data';speak('All your saved data has been erased.');
+  });
+
+  /* commands */
+  var jokes=["Why do programmers prefer dark mode? Because light attracts bugs.","I would tell you a UDP joke, but you might not get it.","There are 10 types of people: those who understand binary and those who don't.","A SQL query walks into a bar, sees two tables and asks: can I join you?"];
+  var SITES={google:'https://www.google.com',gmail:'https://mail.google.com'};
+  function parseTimer(c){
+    var m=c.match(/timer (?:for )?(\d+(?:\.\d+)?|an?|one) ?(second|sec|minute|min|hour|hr)s?/)||c.match(/(\d+(?:\.\d+)?|an?|one) ?(second|sec|minute|min|hour|hr)s? timer/);
+    if(!m)return null;
+    var n=/^\d/.test(m[1])?parseFloat(m[1]):1,u=m[2];
+    return n*(/^h/.test(u)?3600:/^m/.test(u)?60:1);
+  }
+  function handle(raw){
+    var c=stripWake(raw.toLowerCase()).replace(/^[\s,]+|[\s,]+$/g,''),n=new Date(),m;
+    if(!c){speak('Yes?');return;}
+    if(/\b(bye|goodbye|exit|stop listening)\b/.test(c)){speak('Goodbye.');stopListen();}
+    else if(/\b(cancel|stop) (the )?timer\b/.test(c)){stopTimer();speak('Timer stopped.');}
+    else if(/\btimer\b/.test(c)){var sec=parseTimer(c);if(sec){if(accOn.indexOf('timer')<0){accOn.push('timer');lsSet('va_acc',JSON.stringify(accOn));renderAcc();}startTimer(sec);showPanel2('timer');speak('Timer set for '+fmt(sec*1000)+'.');}else{showPanel2('timer');speak('How long should the timer be? Try: set a timer for 5 minutes.');}}
+    else if((m=c.match(/^(?:take a note|note|add a note|remember)(?: that)?[: ]+(.+)/))){notes.push(m[1].slice(0,200));saveNotes();if(panelId==='notes')showPanel2('notes');speak('Noted: '+m[1]);}
+    else if(/\b(show|open) (my )?notes\b/.test(c)){showPanel2('notes');speak('Here are your notes.');}
+    else if(/\bweather\b/.test(c)){m=c.match(/weather (?:in|of|at|for) (.+)/);var city=m?m[1]:'';openLink('https://www.google.com/search?q='+encodeURIComponent('weather '+city),city?'Here is the weather for '+city+'.':'Here is the weather for your location.');}
+    else if(/\bnews\b/.test(c))openLink('https://news.google.com',"Opening today's news.");
+    else if(/\btime\b/.test(c))speak('It is '+n.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+'.');
+    else if(/\b(date|today|day)\b/.test(c))speak('Today is '+n.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'})+'.');
+    else if((m=c.match(/^play (.+)/)))openLink('https://www.youtube.com/results?search_query='+encodeURIComponent(m[1].replace(/ on youtube$/,'')),'Playing '+m[1]+' on YouTube.');
+    else if((m=c.match(/^(?:search|google|look up) (?:for )?(.+)/)))openLink('https://www.google.com/search?q='+encodeURIComponent(m[1]),'Searching for '+m[1]+'.');
+    else if((m=c.match(/^open (.+)/))){
+      var s=m[1].trim().replace(/ app$/,''),hit=apps.filter(function(a){return a.n.toLowerCase()===s;})[0];
+      if(hit)openLink(hit.u,'Opening '+hit.n+'.',hit.n);
+      else if(SITES[s])openLink(SITES[s],'Opening '+s+'.');
+      else speak("I don't have "+s+" yet. You can add it in Settings.");
+    }
+    else if(/\bjoke\b/.test(c))speak(jokes[Math.floor(Math.random()*jokes.length)]);
+    else if(/(your name|who are you)/.test(c))speak('I am '+NAME+', your personal assistant.');
+    else if(/^(hi|hello|hey)\b/.test(c))speak('Hello! How can I help you?');
+    else if(/\bhelp\b|what can you do/.test(c))speak('I can tell the time and date, check the weather, open the news, do maths, set timers, take notes, tell jokes, play songs, search Google, and open any app you add, after asking your permission.');
+    else{var r=calc(c);if(r!==null)speak('The answer is '+r+'.');else{var u='https://www.google.com/search?q='+encodeURIComponent(c);speak("I don't know that one.",esc("I don't know that one.")+' <a href="'+esc(u)+'" target="_blank" rel="noopener noreferrer">Search the web for it?</a>');}}
+  }
+  function submit(text){text=text.trim();if(!text)return;add('You',esc(text));handle(text);}
+
+  /* voice input */
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition,rec=null,listening=false,restartT=0,userStopped=false;
+  function unlockSpeech(){try{if('speechSynthesis' in window){var u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u);}}catch(e){}}
+  function startListen(auto){
+    userStopped=false;
+    if(!SR){if(auto)return;speak('Voice input is not supported in this browser. Please type, or open this page in Chrome or Edge.');return;}
+    unlockSpeech();
+    rec=new SR();rec.lang='en-IN';rec.continuous=false;rec.interimResults=false;rec.maxAlternatives=1;
+    rec.onstart=function(){statusEl.textContent='Listening... say "'+NAME+', what\'s the time?"';};
+    rec.onresult=function(e){
+      var r=e.results[e.results.length-1];
+      if(r.isFinal&&!speaking)submit(r[0].transcript);
+    };
+    rec.onerror=function(e){
+      var er=e.error;
+      if(er==='no-speech'||er==='aborted')return;
+      if(auto&&(er==='not-allowed'||er==='service-not-allowed')){stopListen(true);statusEl.textContent='Tap anywhere on the page to turn voice on.';return;}
+      if(er==='not-allowed'||er==='service-not-allowed'){speak('Microphone access is blocked. Allow the microphone for this page in your browser, or open this page directly in Chrome or Edge instead of inside another app. You can also type commands.');}
+      else if(er==='audio-capture'){speak('I cannot find a microphone on this device.');}
+      else if(er==='network'){speak('Voice needs an internet connection to understand speech. You can type commands instead.');}
+      else{speak('Voice input stopped ('+er+'). You can type commands instead.');}
+      stopListen();
+    };
+    rec.onend=function(){if(listening){clearTimeout(restartT);restartT=setTimeout(function(){if(listening){try{rec.start();}catch(x){}}},300);}};
+    try{rec.start();listening=true;orb.classList.add('on');statusEl.textContent='Starting microphone...';}
+    catch(x){speak('Could not start the microphone. Please try again.');}
+  }
+  function stopListen(soft){if(!soft)userStopped=true;listening=false;clearTimeout(restartT);if(rec){try{rec.stop();}catch(x){}}orb.classList.remove('on');statusEl.textContent='Offline. Tap the orb to start.';}
+  function toggle(){listening?stopListen():startListen();}
+  orb.addEventListener('click',toggle);
+  orb.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();}});
+  $('f').addEventListener('submit',function(e){e.preventDefault();var i=$('t');submit(i.value);i.value='';});
+  ['What time is it','Daily news','Weather','Tell me a joke','Play lofi music','25 times 4','Set a timer for 5 minutes','Note buy milk'].forEach(function(s){
+    var b=document.createElement('button');b.type='button';b.className='chip sug';b.textContent=s;b.onclick=function(){submit(s);};$('chips').appendChild(b);
+  });
+
+  applyName();renderApps();renderAcc();
+  function greeting(){var h=new Date().getHours();return (h<12?'Good morning':h<17?'Good afternoon':'Good evening')+'! How can I help you? '+NAME+' is on.';}
+  var welcomeText=greeting();
+  add(NAME,esc(welcomeText));
+  setTimeout(function(){say(welcomeText);startListen(true);},700);
+  var GEV=['pointerdown','click','touchend','keydown'];
+  function firstGesture(e){
+    GEV.forEach(function(n){document.removeEventListener(n,firstGesture,true);});
+    var onOrb=e.target&&e.target.closest&&e.target.closest('#orb');
+    if(!spokeOnce)setTimeout(function(){say(welcomeText);},60);
+    if(!onOrb&&!listening&&!userStopped)startListen(true);
+  }
+  GEV.forEach(function(n){document.addEventListener(n,firstGesture,true);});
+  setTimeout(function(){if(!spokeOnce&&!listening)statusEl.textContent='Tap anywhere to hear the greeting and turn voice on.';},1500);
+})();
+</script>
+</body>
+</html>
